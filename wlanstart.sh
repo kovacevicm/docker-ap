@@ -52,7 +52,7 @@ wpa_pairwise=CCMP
 rsn_pairwise=CCMP
 wpa_ptk_rekey=600
 ieee80211n=1
-ht_capab=${HT_CAPAB}
+#ht_capab=${HT_CAPAB}
 wmm_enabled=1 
 EOF
 
@@ -89,6 +89,12 @@ if [ "${OUTGOINGS}" ] ; then
       echo "Setting iptables for outgoing traffics on ${int}..."
       iptables -t nat -D POSTROUTING -s ${SUBNET}/24 -o ${int} -j MASQUERADE > /dev/null 2>&1 || true
       iptables -t nat -A POSTROUTING -s ${SUBNET}/24 -o ${int} -j MASQUERADE
+
+      iptables -D FORWARD -i ${int} -o ${INTERFACE} -m state --state RELATED,ESTABLISHED -j ACCEPT > /dev/null 2>&1 || true
+      iptables -A FORWARD -i ${int} -o ${INTERFACE} -m state --state RELATED,ESTABLISHED -j ACCEPT
+
+      iptables -D FORWARD -i ${INTERFACE} -o ${int} -j ACCEPT > /dev/null 2>&1 || true
+      iptables -A FORWARD -i ${INTERFACE} -o ${int} -j ACCEPT
    done
 else
    echo "Setting iptables for outgoing traffics on all interfaces..."
@@ -97,7 +103,7 @@ else
 fi
 echo "Configuring DHCP server .."
 
-cat > "/etc/dhcpd.conf" <<EOF
+cat > "/etc/dhcp/dhcpd.conf" <<EOF
 option domain-name-servers 8.8.8.8, 8.8.4.4;
 option subnet-mask 255.255.255.0;
 option routers ${AP_ADDR};
